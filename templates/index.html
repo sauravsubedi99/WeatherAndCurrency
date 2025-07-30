@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather & Currency Exchange Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: white;
+            border-left: 4px solid #4facfe;
+        }
+
+        .customer-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .customer-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .customer-actions .btn {
+            flex: 1;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .flash-messages {
+            padding: 0 30px;
+        }
+
+        .flash {
+            padding: 12px 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .flash.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .customer-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌤️ Weather & Currency Exchange Tool</h1>
+            <p>Get real-time weather data and currency exchange rates</p>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="main-content">
+            <!-- Weather Section -->
+            <div class="section">
+                <h2>🌡️ Weather Report</h2>
+                <div class="form-group">
+                    <label for="city">Enter City Name:</label>
+                    <input type="text" id="city" placeholder="e.g., London, New York" value="London">
+                </div>
+                <button class="btn" onclick="getWeather()">Get Weather</button>
+                <div class="loading" id="weather-loading">Getting weather data...</div>
+                <div id="weather-result" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Currency Exchange Section -->
+            <div class="section">
+                <h2>💱 Currency Exchange</h2>
+                <div class="form-group">
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" placeholder="Enter amount" value="100" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="from-currency">From Currency:</label>
+                    <select id="from-currency">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                        <option value="AUD">AUD - Australian Dollar</option>
+                        <option value="CHF">CHF - Swiss Franc</option>
+                        <option value="CNY">CNY - Chinese Yuan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="to-currency">To Currency:</label>
+                    <select id="to-currency">
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="CAD">CAD - Canadian Dollar</option>
+                        <option value="AUD">AUD - Australian Dollar</option>
+                        <option value="CHF">CHF - Swiss Franc</option>
+                        <option value="CNY">CNY - Chinese Yuan</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="getExchangeRate()">Convert Currency</button>
+                <div class="loading" id="exchange-loading">Getting exchange rates...</div>
+                <div id="exchange-result" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Customer Management Section -->
+            <div class="section customer-section">
+                <h2>👤 Customer Management</h2>
+                <form method="POST" action="/add_customer">
+                    <div class="form-group">
+                        <label for="customer_name">Customer Name:</label>
+                        <input type="text" id="customer_name" name="customer_name" 
+                               placeholder="Enter customer name" required>
+                    </div>
+                    <div class="customer-actions">
+                        <button type="submit" class="btn">📝 Submit Customer</button>
+                        <a href="/customers" class="btn btn-info">👥 View All Customers</a>
+                        <a href="/clear_customers" class="btn btn-danger" 
+                           onclick="return confirm('Are you sure you want to clear all customers?')">
+                           🗑️ Clear All Customers
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('city').value;
+            const loadingEl = document.getElementById('weather-loading');
+            const resultEl = document.getElementById('weather-result');
+            
+            if (!city.trim()) {
+                alert('Please enter a city name');
+                return;
+            }
+            
+            loadingEl.style.display = 'block';
+            resultEl.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/weather?city=${encodeURIComponent(city)}`);
+                const data = await response.json();
+                
+                loadingEl.style.display = 'none';
+                
+                if (data.success) {
+                    resultEl.innerHTML = `
+                        <h3>🌤️ Weather in ${data.city}</h3>
+                        <p><strong>Temperature:</strong> ${data.temperature}°C</p>
+                        <p><strong>Description:</strong> ${data.description}</p>
+                        <p><strong>Humidity:</strong> ${data.humidity}%</p>
+                        <p><strong>Pressure:</strong> ${data.pressure} hPa</p>
+                    `;
+                } else {
+                    resultEl.innerHTML = `<p style="color: red;">❌ Error: ${data.error}</p>`;
+                }
+                
+                resultEl.style.display = 'block';
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                resultEl.innerHTML = `<p style="color: red;">❌ Network error: ${error.message}</p>`;
+                resultEl.style.display = 'block';
+            }
+        }
+        
+        async function getExchangeRate() {
+            const amount = document.getElementById('amount').value;
+            const fromCurrency = document.getElementById('from-currency').value;
+            const toCurrency = document.getElementById('to-currency').value;
+            const loadingEl = document.getElementById('exchange-loading');
+            const resultEl = document.getElementById('exchange-result');
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            loadingEl.style.display = 'block';
+            resultEl.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/exchange?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`);
+                const data = await response.json();
+                
+                loadingEl.style.display = 'none';
+                
+                if (data.success) {
+                    resultEl.innerHTML = `
+                        <h3>💱 Currency Conversion</h3>
+                        <p><strong>${data.original_amount} ${data.from_currency}</strong> = 
+                           <strong>${data.converted_amount} ${data.to_currency}</strong></p>
+                        <p><strong>Exchange Rate:</strong> 1 ${data.from_currency} = ${data.rate} ${data.to_currency}</p>
+                    `;
+                } else {
+                    resultEl.innerHTML = `<p style="color: red;">❌ Error: ${data.error}</p>`;
+                }
+                
+                resultEl.style.display = 'block';
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                resultEl.innerHTML = `<p style="color: red;">❌ Network error: ${error.message}</p>`;
+                resultEl.style.display = 'block';
+            }
+        }
+        
+        // Auto-fade flash messages
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash');
+            flashes.forEach(flash => {
+                flash.style.transition = 'opacity 0.5s';
+                flash.style.opacity = '0';
+                setTimeout(() => flash.remove(), 500);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
